@@ -1,7 +1,9 @@
 .idea/
 .vscode/
-code/__pycache__/
-code/logs/*
-code/checkpoints/
+.ipynb_checkpoints/
+__pycache__/
+logs/
+logs/*
+checkpoints/
 *.log
 *.iml

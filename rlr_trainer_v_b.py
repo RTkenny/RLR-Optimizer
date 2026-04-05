@@ -88,7 +88,7 @@ class RLR_Trainer(BaseTrainer):
             
         elif self.config.gradient_estimation_strategy == "RLR":
             # gradient_accumulation_steps = self.config.train_zo_sample_budget
-            gradient_accumulation_steps = self.config.train_gradient_accumulation_steps
+            gradient_accumulation_steps = self.config.train_gradient_accumulation_steps* self.config.chain_len+1
         else:
             gradient_accumulation_steps = self.config.train_gradient_accumulation_steps
         
@@ -711,6 +711,12 @@ class RLR_Trainer(BaseTrainer):
                     FO_loss = loss * self.config.loss_coeff
                     loss_dict = {}
                     loss_dict['FO_loss'] = FO_loss
+
+                    # option 2: separate FO and HO backward
+                    self.accelerator.backward(FO_loss)
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+
                     loss_dict['HO_loss'] = torch.tensor(0.0, dtype=torch.float32, device=self.accelerator.device)
                     # self.accelerator.backward(FO_loss)
                     # self.optimizer.step()
@@ -766,6 +772,14 @@ class RLR_Trainer(BaseTrainer):
                             )
                         )
 
+                        #option 2: separate FO and HO backward
+                        if HO_loss.isnan():
+                            HO_loss = torch.tensor(0.0, dtype=torch.float32, device=self.accelerator.device)
+                        # time.sleep(5)
+                        self.accelerator.backward(HO_loss)
+                        self.optimizer.step()
+                        self.optimizer.zero_grad()
+
                         # import ipdb; ipdb.set_trace()
                         # HO_loss = torch.mean(-log_prob * torch.tensor(rewards, device=self.accelerator.device))
                         # self.accelerator.backward(HO_loss)
@@ -774,20 +788,21 @@ class RLR_Trainer(BaseTrainer):
                         else:
                             loss_dict['HO_loss'] += HO_loss
 
-                    # # Option 1: Combine losses (recommended)
-                    if loss_dict.get('HO_loss') is not None and loss_dict['HO_loss'].isnan():
-                        loss_dict['HO_loss'] = torch.tensor(0.0, dtype=torch.float32, device=self.accelerator.device)
-                    total_loss = loss_dict['FO_loss'] + loss_dict['HO_loss']
-                    self.accelerator.backward(total_loss)
+                    # # # Option 1: Combine losses (recommended)
+                    # if loss_dict.get('HO_loss') is not None and loss_dict['HO_loss'].isnan():
+                    #     loss_dict['HO_loss'] = torch.tensor(0.0, dtype=torch.float32, device=self.accelerator.device)
+                    # total_loss = loss_dict['FO_loss'] + loss_dict['HO_loss']
+                    # self.accelerator.backward(total_loss)
                     
                     print(f'loss_dict:{loss_dict}')
                         
                     info["reward_mean"].append(rewards.mean())
                     info["reward_std"].append(rewards.std())
+                    total_loss = loss_dict['FO_loss'] + loss_dict['HO_loss']
                     info["loss"].append(total_loss.item())
 
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                    # self.optimizer.step()
+                    # self.optimizer.zero_grad()
 
             # Checks if the accelerator has performed an optimization step behind the scenes
             if self.accelerator.sync_gradients:

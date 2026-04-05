@@ -1,5 +1,5 @@
 # **Recursive Likelihood Ratio Optimizer**
-![RLR](asset/rlr_c.png)
+![RLR](figures/rlr_c.png)
 
 Official implementation of the paper:  
 **Half-order Fine-Tuning for Diffusion Model: A Recursive Likelihood Ratio Optimizer [arXiv Preprint](https://arxiv.org/abs/2502.00639)**
@@ -11,7 +11,53 @@ The Recursive Likelihood Ratio (RLR) Optimizer is a novel fine-tuning algorithm 
 
 ## News
 
-Our paper has been accepted as oral presentation in ICLR 2026. Codes will be coming soon!
+Our paper has been accepted as oral presentation in ICLR 2026. The implementation is open-source!
+
+## Model Preparation
+
+For post-training, download the following pretrained models:
+
+- Stable Diffusion v1.4: `CompVis/stable-diffusion-v1-4`
+- CLIP ViT-L/14: `openai/clip-vit-large-patch14`
+
+After downloading, update the corresponding model paths in:
+
+- `aesthetic_scorer.py`
+- `main.py`
+
+## Environment Setup
+
+The experiments are tested with:
+
+- `trl==0.12.2`
+- `transformers==4.46.3`
+
+```bash
+cd ./code
+conda create -n RLR python=3.10 -y
+conda activate RLR
+
+pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu122
+pip install -r requirements.txt
+```
+
+## Training Commands
+
+Run PPO baseline (RL):
+
+```bash
+bash ./scripts/aesthetic_ppo.sh
+```
+
+Run Stable Diffusion v1.4 training with the RLR optimizer:
+
+```bash
+bash ./scripts/aesthetic_RLR_vb.sh
+```
+
+## Notes
+
+To train with truncated backpropagation (AlignProp style), set `chain_len=0` in `scripts/aesthetic_RLR_vb.sh`.
 
 ## Citation
 If you find this work useful, please cite:

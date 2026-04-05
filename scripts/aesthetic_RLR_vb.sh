@@ -13,6 +13,6 @@ CUDA_VISIBLE_DEVICES=0 accelerate launch main.py \
     --reward_fn='aesthetic' \
     --prompt_fn='simple_animals' \
     --train_batch_size=6 \
-    --tracker_project_name="RLR_Text2Image_RLR_HO_chain2" \
+    --tracker_project_name="RLR_Text2Image_RLR_HO_chain2_seperate_backward" \
     --log_with="tensorboard" \
     --seed=42
